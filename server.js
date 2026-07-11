@@ -1,5 +1,5 @@
 // =======================
-// FinFlow Backend Server
+// GameHub Backend Server
 // =======================
 
 // Load environment variables FIRST
@@ -19,10 +19,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ✅ SIMPLE & SAFE CORS (works for Railway, Vercel, Netlify, localhost)
+// CORS - Allow all origins for development
 app.use(
   cors({
-    origin: true, // allow all origins
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
@@ -48,13 +48,13 @@ mongoose
   });
 
 // =======================
-// Routes
+// Routes - GAMING SHOP ONLY
 // =======================
 app.use("/api/auth", require("./routes/auth"));
+app.use("/api/user", require("./routes/user"));
 app.use("/api/devices", require("./routes/devices"));
 app.use("/api/gaming-bills", require("./routes/gaming-bills"));
 app.use("/api/shop-expenses", require("./routes/shop-expenses"));
-app.use("/api/user", require("./routes/user"));
 
 // =======================
 // Health Check (Frontend + Railway)
@@ -62,7 +62,7 @@ app.use("/api/user", require("./routes/user"));
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     status: "OK",
-    message: "FinFlow API is running",
+    message: "GameHub API is running",
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });
@@ -71,9 +71,17 @@ app.get("/api/health", (req, res) => {
 // Root route (Railway check)
 app.get("/", (req, res) => {
   res.status(200).json({
-    name: "FinFlow Backend",
+    name: "GameHub Backend",
     status: "Running",
-    environment: process.env.NODE_ENV || "development"
+    environment: process.env.NODE_ENV || "development",
+    endpoints: {
+      auth: "/api/auth",
+      user: "/api/user",
+      devices: "/api/devices",
+      bills: "/api/gaming-bills",
+      expenses: "/api/shop-expenses",
+      health: "/api/health"
+    }
   });
 });
 
@@ -92,10 +100,12 @@ app.use((req, res) => {
 // =======================
 app.use((err, req, res, next) => {
   console.error("❌ Error:", err.message);
+  console.error("Stack:", err.stack);
 
   res.status(500).json({
     success: false,
-    message: "Internal Server Error"
+    message: "Internal Server Error",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined
   });
 });
 
@@ -105,6 +115,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 GameHub Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
 });
